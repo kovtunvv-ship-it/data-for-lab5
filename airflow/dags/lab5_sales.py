@@ -7,15 +7,15 @@ import pendulum
 from airflow.sdk import dag, task, get_current_context
 
 # ===== НАЛАШТУВАННЯ ВАРІАНТА (змінюйте лише цей блок) =====
-REGION = "West"                  # регіон, який обробляє конвеєр
-FAIL_AT = None                   # крок, який «ламаємо»: "extract", "transform", "publish" або None
-FLAKY_FAILS = 0                  # скільки перших спроб extract «падає» (імітація збою мережі); 0 = не падає
-RETRIES = 0                      # скільки повторних спроб дозволено
-SCHEDULE = None                  # None = лише ручний запуск; "@daily" = щодня
-DAYS_BACK = 3                    # з якого дня назад починається розклад (для backfill)
-CATCHUP = False                  # True: Airflow сам запускає пропущені дні
+REGION = "West"                  # крок 2: регіон вашого варіанта
+FAIL_AT = None                   # крок 3: крок, який «ламаємо»: "extract", "transform", "publish"; у інших кроках None
+FLAKY_FAILS = 0                  # крок 4: N з таблиці варіантів (скільки перших спроб extract «падає»); в інших кроках 0
+RETRIES = 0                      # крок 4: спочатку 0, потім N (скільки повторних спроб дозволено)
+SCHEDULE = None                  # крок 5: "@daily"; в інших кроках None (лише ручний запуск)
+# D (днів Backfill) у файлі не задається: його вводять у вікні Trigger -> Backfill (крок 5)
 # ==========================================================
 
+START = pendulum.datetime(2026, 1, 1, tz="UTC")   # фіксована дата початку (не змінювати)
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "data" / "warehouse_flat_clean.csv"
 OUT = ROOT / "output"
@@ -24,8 +24,8 @@ OUT = ROOT / "output"
 @dag(
     dag_id="lab5_sales",
     schedule=SCHEDULE,
-    start_date=pendulum.today("UTC").subtract(days=DAYS_BACK),
-    catchup=CATCHUP,
+    start_date=START,
+    catchup=False,
     default_args={"retries": RETRIES, "retry_delay": timedelta(seconds=10)},
     tags=["lab5"],
 )
